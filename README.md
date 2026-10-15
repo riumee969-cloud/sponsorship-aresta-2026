@@ -1,0 +1,1 @@
+# sponsorship-aresta-2026
