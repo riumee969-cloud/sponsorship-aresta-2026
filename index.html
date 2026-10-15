@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sponsorship Aresta</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--teal:#11796f;--dark:#0c625b;--bg:#f1f5f9;--ink:#1f2937;--muted:#64748b;--line:#d7dee7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px Arial,sans-serif;color:var(--ink)}.wrap{max-width:1180px;margin:24px auto;padding:0 16px}.card{background:white;border-radius:14px;padding:22px;box-shadow:0 5px 18px #1e293b0b}.formcard{max-width:650px;margin:24px auto}.hero{background:var(--teal);color:white;border-radius:14px;padding:24px;margin-bottom:18px}h1{font-size:27px;margin:0 0 7px}h2{font-size:22px;color:var(--teal);margin:0 0 8px}p{color:var(--muted);line-height:1.5;margin:0 0 16px}label{display:block;font-weight:bold;margin:14px 0 6px}input,select,textarea{width:100%;border:1px solid #cfd5df;border-radius:7px;padding:11px;background:white;font:14px Arial}textarea{min-height:80px}.btn{border:0;border-radius:7px;padding:11px 15px;background:var(--teal);color:white;font-weight:bold;cursor:pointer}.btn:disabled{opacity:.55}.secondary{background:#e2e8f0;color:#263548}.danger{background:#b91c1c}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.actions .btn{flex:1}.hidden{display:none!important}.status{padding:12px;border-radius:8px;margin:12px 0;background:#e0f2fe;color:#075985;overflow-wrap:anywhere}.error{background:#fee2e2;color:#991b1b}.hint,.small{font-size:12px;color:var(--muted);margin-top:5px}.filebox{border:1px dashed #aab4c2;padding:12px;border-radius:8px;background:#f8fafc}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}.stat{background:white;padding:18px;border-radius:12px}.stat span{color:var(--muted)}.stat strong{display:block;color:var(--teal);font-size:23px;margin-top:6px}.toolbar{display:flex;gap:8px;margin-bottom:12px}.toolbar input{flex:1}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e5e7eb}th{background:#f8fafc}a{color:var(--teal)}@media(max-width:700px){.stats{grid-template-columns:1fr}.toolbar{flex-direction:column}.card{padding:16px}.hero{padding:18px}h1{font-size:23px}}
+</style>
+</head>
+<body>
+<section id="publicPage" class="wrap formcard">
+ <div class="card">
+  <div style="text-align:center"><h2>Formulir Sponsorship Aresta</h2><p>Formulir pendataan sponsor dan dokumentasi pembayaran</p></div>
+  <form id="sponsorForm">
+   <label>Nama Sponsor / Perusahaan *</label><input name="company" required maxlength="200" placeholder="Masukkan nama sponsor">
+   <label>Nama Penanggung Jawab *</label><input name="contact" required maxlength="200" placeholder="Masukkan nama penanggung jawab">
+   <label>Nomor Telepon / WhatsApp *</label><input name="phone" required maxlength="50" placeholder="Contoh: 08xxxxxxxxxx">
+   <label>Email</label><input name="email" type="email" maxlength="200" placeholder="nama@email.com">
+   <label>Paket Sponsorship *</label><select name="package_name" required><option value="">-- Pilih paket --</option><option>Platinum</option><option>Gold</option><option>Silver</option><option>Bronze</option><option>Donatur / Paket Lainnya</option></select>
+   <label>Nominal Sponsorship (Rp) *</label><input name="amount" required inputmode="numeric" placeholder="Contoh: 1000000">
+   <label>1. Foto Sponsor / Logo Perusahaan *</label><div class="filebox"><input id="logo" type="file" accept="image/png,image/jpeg,image/webp" required><div class="hint">JPG, PNG, WEBP. Maksimal 5 MB.</div></div>
+   <label>2. Foto Bukti Transfer / Dokumentasi *</label><div class="filebox"><input id="proof" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" required><div class="hint">JPG, PNG, WEBP, PDF. Maksimal 5 MB.</div></div>
+   <label>Catatan Tambahan</label><textarea name="notes" maxlength="2000" placeholder="Tambahkan catatan jika diperlukan"></textarea>
+   <div id="formStatus" class="status hidden"></div>
+   <div class="actions"><button id="submitBtn" class="btn" type="submit">Simpan Data Sponsorship</button><button class="btn secondary" type="reset">Reset Formulir</button></div>
+  </form>
+ </div>
+</section>
+<section id="adminPage" class="wrap hidden">
+ <header class="hero"><h1>Database Sponsorship Aresta</h1><div>Pengelolaan data sponsor, logo perusahaan, dan bukti transfer.</div></header>
+ <div id="loginCard" class="card" style="max-width:430px;margin:28px auto">
+  <h2>Login Admin</h2><p>Hanya akun admin yang telah dibuat di Supabase yang dapat masuk.</p>
+  <form id="loginForm"><label>Email admin</label><input id="adminEmail" type="email" autocomplete="username" required><label>Password</label><input id="adminPassword" type="password" autocomplete="current-password" required><div id="loginStatus" class="status hidden"></div><div class="actions"><button class="btn" type="submit">Masuk ke Database</button></div></form>
+ </div>
+ <div id="dashboard" class="hidden">
+  <div class="stats"><div class="stat"><span>Total Sponsor</span><strong id="totalSponsors">0</strong></div><div class="stat"><span>Total Dana Sponsorship</span><strong id="totalAmount">Rp 0</strong></div><div class="stat"><span>Data dengan Dua File</span><strong id="totalFiles">0</strong></div></div>
+  <div class="card"><div class="toolbar"><input id="search" placeholder="Cari sponsor, kontak, paket, atau telepon..."><button id="refreshBtn" class="btn">Muat Ulang</button><button id="csvBtn" class="btn secondary">Ekspor CSV</button><button id="logoutBtn" class="btn danger">Keluar</button></div><div id="adminStatus" class="status hidden"></div>
+  <div class="tablewrap"><table><thead><tr><th>No.</th><th>Nama Sponsor</th><th>Penanggung Jawab</th><th>Telepon</th><th>Email</th><th>Paket</th><th>Nominal</th><th>Logo</th><th>Bukti Transfer</th><th>Catatan</th><th>Tanggal</th></tr></thead><tbody id="rows"></tbody></table></div>
+  <p class="small" style="margin-top:14px">File menggunakan signed URL sementara. Jangan bagikan link file kepada orang lain.</p></div>
+ </div>
+</section>
+<script>
+/* LANGKAH WAJIB: isi dua nilai di bawah dari Supabase > Project Settings / Connect.
+   Gunakan Project URL dan publishable key (atau anon key lama). JANGAN gunakan service_role/secret key. */
+const SUPABASE_URL = "https://kfibknrrwndurbyilzrq.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_peIePJn5ncirdbuA7upLOA_MGtMOUQ5";
+const BUCKET = "sponsorship-files";
+const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("PASTE_") && !SUPABASE_PUBLISHABLE_KEY.includes("PASTE_");
+const db = configured ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY) : null;
+const isAdminPage = new URLSearchParams(location.search).get("page")==="admin";
+document.getElementById("publicPage").classList.toggle("hidden",isAdminPage);
+document.getElementById("adminPage").classList.toggle("hidden",!isAdminPage);
+const rupiah=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n||0));
+function status(id,msg,error=false){const e=document.getElementById(id);e.textContent=msg;e.classList.remove("hidden","error");if(error)e.classList.add("error")}
+function clearStatus(id){document.getElementById(id).classList.add("hidden")}
+function ready(){if(!db){throw new Error("Aplikasi belum dikonfigurasi. Isi SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY di file index.html.");}}
+function safeName(s){return String(s||"file").replace(/[^a-zA-Z0-9._-]/g,"_").slice(0,90)}
+async function uploadFile(file,kind){
+ if(!file)throw new Error("Pilih kedua file yang diwajibkan.");
+ if(file.size>5*1024*1024)throw new Error("Ukuran tiap file maksimal 5 MB.");
+ const allowed=kind==="logo"?["image/jpeg","image/png","image/webp"]:["image/jpeg","image/png","image/webp","application/pdf"];
+ if(!allowed.includes(file.type))throw new Error("Jenis file tidak didukung.");
+ const path="submissions/"+crypto.randomUUID()+"-"+safeName(file.name);
+ const {error}=await db.storage.from(BUCKET).upload(path,file,{contentType:file.type,upsert:false});
+ if(error)throw error;
+ return path;
+}
+document.getElementById("sponsorForm").addEventListener("submit",async e=>{
+ e.preventDefault();const btn=document.getElementById("submitBtn");btn.disabled=true;btn.textContent="Mengirim...";
+ try{
+  ready();const f=e.currentTarget;const amount=Number(String(f.amount.value).replace(/[^\d]/g,""));
+  if(!Number.isSafeInteger(amount)||amount<1)throw new Error("Nominal sponsorship harus berupa angka lebih dari nol.");
+  const logoPath=await uploadFile(document.getElementById("logo").files[0],"logo");
+  const proofPath=await uploadFile(document.getElementById("proof").files[0],"proof");
+  const {error}=await db.from("sponsorships").insert([{company:f.company.value.trim(),contact:f.contact.value.trim(),phone:f.phone.value.trim(),email:f.email.value.trim()||null,package_name:f.package_name.value,amount,logo_path:logoPath,proof_path:proofPath,notes:f.notes.value.trim()||null}]);
+  if(error)throw error;
+  status("formStatus","Data sponsorship berhasil dikirim. Terima kasih!");f.reset();
+ }catch(err){status("formStatus",err.message||"Pengiriman gagal. Silakan coba lagi.",true)}
+ finally{btn.disabled=false;btn.textContent="Simpan Data Sponsorship"}
+});
+document.getElementById("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();try{ready();const {error}=await db.auth.signInWithPassword({email:document.getElementById("adminEmail").value.trim(),password:document.getElementById("adminPassword").value});if(error)throw error;await loadAdmin();}catch(err){status("loginStatus",err.message||"Login gagal.",true)}
+});
+async function requireAdmin(){ready();const {data:{user},error}=await db.auth.getUser();if(error||!user)throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");return user;}
+async function loadAdmin(){
+ try{await requireAdmin();const {data,error}=await db.from("sponsorships").select("*").order("created_at",{ascending:false});if(error)throw error;
+  document.getElementById("loginCard").classList.add("hidden");document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("totalSponsors").textContent=data.length;document.getElementById("totalAmount").textContent=rupiah(data.reduce((s,r)=>s+Number(r.amount||0),0));document.getElementById("totalFiles").textContent=data.filter(r=>r.logo_path&&r.proof_path).length;
+  window.adminRows=data;renderRows();
+ }catch(err){status("adminStatus",err.message||"Tidak dapat memuat database. Pastikan akun ini adalah admin yang diizinkan.",true)}
+}
+async function signedLink(path){if(!path)return "";const {data,error}=await db.storage.from(BUCKET).createSignedUrl(path,120);if(error)throw error;return data.signedUrl;}
+async function renderRows(){
+ const q=(document.getElementById("search").value||"").toLowerCase();const data=(window.adminRows||[]).filter(r=>[r.company,r.contact,r.phone,r.email,r.package_name,r.notes].join(" ").toLowerCase().includes(q));const tbody=document.getElementById("rows");tbody.replaceChildren();
+ if(!data.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=11;td.textContent="Belum ada data sponsorship.";tr.appendChild(td);tbody.appendChild(tr);return;}
+ for(let i=0;i<data.length;i++){const r=data[i],tr=document.createElement("tr");[i+1,r.company,r.contact,r.phone,r.email||"",r.package_name,rupiah(r.amount)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
+  for(const p of [r.logo_path,r.proof_path]){const td=document.createElement("td");if(p){try{const a=document.createElement("a");a.href=await signedLink(p);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a)}catch(_){td.textContent="Tidak tersedia"}}else td.textContent="-";tr.appendChild(td)}
+  [r.notes||"",new Date(r.created_at).toLocaleString("id-ID")].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});tbody.appendChild(tr);
+ }
+}
+document.getElementById("search").addEventListener("input",renderRows);
+document.getElementById("refreshBtn").addEventListener("click",loadAdmin);
+document.getElementById("logoutBtn").addEventListener("click",async()=>{if(db)await db.auth.signOut();document.getElementById("dashboard").classList.add("hidden");document.getElementById("loginCard").classList.remove("hidden")});
+document.getElementById("csvBtn").addEventListener("click",()=>{const rows=window.adminRows||[];const cols=["created_at","company","contact","phone","email","package_name","amount","notes"];const csv=[cols.join(","),...rows.map(r=>cols.map(k=>'"'+String(r[k]??"").replace(/"/g,'""')+'"').join(","))].join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="database-sponsorship-aresta.csv";a.click();URL.revokeObjectURL(a.href)});
+if(isAdminPage&&configured){db.auth.getSession().then(({data})=>{if(data.session)loadAdmin()})}
+</script>
+</body></html>
