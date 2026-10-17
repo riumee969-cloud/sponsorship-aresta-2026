@@ -205,42 +205,139 @@ async function uploadFile(file,kind){
  return path;
 }
 document.getElementById("sponsorForm").addEventListener("submit",async e=>{
- e.preventDefault();const btn=document.getElementById("submitBtn");btn.disabled=true;btn.textContent="Mengirim...";
+ e.preventDefault();
+ const btn=document.getElementById("submitBtn");
+ btn.disabled=true;btn.textContent="Mengirim...";
+ let stage="menghubungkan ke Supabase";
  try{
-  ready();const f=e.currentTarget;const amount=Number(String(f.amount.value).replace(/[^\d]/g,""));
+  clearStatus("formStatus");ready();
+  const f=e.currentTarget;
+  const amount=Number(String(f.amount.value).replace(/[^\d]/g,""));
   if(!Number.isSafeInteger(amount)||amount<1)throw new Error("Nominal sponsorship harus berupa angka lebih dari nol.");
+  stage="mengunggah logo sponsor";
   const logoPath=await uploadFile(document.getElementById("logo").files[0],"logo");
+  stage="mengunggah bukti transfer";
   const proofPath=await uploadFile(document.getElementById("proof").files[0],"proof");
-  const {error}=await db.from("sponsorships").insert([{company:f.company.value.trim(),contact:f.contact.value.trim(),phone:f.phone.value.trim(),email:f.email.value.trim()||null,package_name:f.package_name.value,amount,logo_path:logoPath,proof_path:proofPath,notes:f.notes.value.trim()||null}]);
+  stage="menyimpan data sponsorship";
+  const {error}=await db.from("sponsorships").insert([{
+   company:f.company.value.trim(),contact:f.contact.value.trim(),phone:f.phone.value.trim(),
+   email:f.email.value.trim()||null,package_name:f.package_name.value,amount,
+   logo_path:logoPath,proof_path:proofPath,notes:f.notes.value.trim()||null,payment_status:"pending"
+  }]);
   if(error)throw error;
-  status("formStatus","Data sponsorship berhasil dikirim. Terima kasih!");f.reset();
- }catch(err){status("formStatus",err.message||"Pengiriman gagal. Silakan coba lagi.",true)}
- finally{btn.disabled=false;btn.textContent="Simpan Data Sponsorship"}
+  status("formStatus","Data sponsorship berhasil dikirim. Status pembayaran: PENDING (menunggu verifikasi admin).");
+  f.reset();
+ }catch(err){
+  let msg=err?.message||"Pengiriman gagal. Silakan coba lagi.";
+  if(msg.toLowerCase().includes("failed to fetch")||msg.toLowerCase().includes("networkerror")){
+   msg="Koneksi ke Supabase gagal saat "+stage+". Periksa koneksi internet, pastikan project Supabase aktif, dan cek Project URL. Jika gagal saat unggah file, periksa Storage > Policies untuk bucket '"+BUCKET+"'. Jika gagal saat menyimpan data, periksa Table Editor > sponsorships dan kebijakan RLS.";
+  } else if(/row-level security|permission denied|not allowed|unauthorized/i.test(msg)){
+   msg="Supabase menolak akses saat "+stage+". Periksa kebijakan RLS tabel sponsorships dan Storage Policies bucket '"+BUCKET+"'. Detail: "+msg;
+  }
+  status("formStatus",msg,true);
+ }finally{btn.disabled=false;btn.textContent="Kirim Data Sponsorship →"}
 });
 document.getElementById("loginForm").addEventListener("submit",async e=>{
  e.preventDefault();try{ready();const {error}=await db.auth.signInWithPassword({email:document.getElementById("adminEmail").value.trim(),password:document.getElementById("adminPassword").value});if(error)throw error;await loadAdmin();}catch(err){status("loginStatus",err.message||"Login gagal.",true)}
 });
 async function requireAdmin(){ready();const {data:{user},error}=await db.auth.getUser();if(error||!user)throw new Error("Sesi login tidak ditemukan. Silakan login kembali.");return user;}
-async function loadAdmin(){
- try{await requireAdmin();const {data,error}=await db.from("sponsorships").select("*").order("created_at",{ascending:false});if(error)throw error;
-  document.getElementById("loginCard").classList.add("hidden");document.getElementById("dashboard").classList.remove("hidden");
-  document.getElementById("totalSponsors").textContent=data.length;document.getElementById("totalAmount").textContent=rupiah(data.reduce((s,r)=>s+Number(r.amount||0),0));document.getElementById("totalFiles").textContent=data.filter(r=>r.logo_path&&r.proof_path).length;
-  window.adminRows=data;renderRows();
- }catch(err){status("adminStatus",err.message||"Tidak dapat memuat database. Pastikan akun ini adalah admin yang diizinkan.",true)}
+function normalizedPaymentStatus(value){return ["pending","paid","failed","expired"].includes(String(value||"").toLowerCase())?String(value).toLowerCase():"pending";}
+function paymentLabel(value){
+ const st=normalizedPaymentStatus(value);
+ return st==="paid"?"PAID · Lunas":st==="failed"?"FAILED · Gagal":st==="expired"?"EXPIRED · Kedaluwarsa":"PENDING · Menunggu";
 }
-async function signedLink(path){if(!path)return "";const {data,error}=await db.storage.from(BUCKET).createSignedUrl(path,120);if(error)throw error;return data.signedUrl;}
+async function loadAdmin(){
+ try{
+  clearStatus("adminStatus");
+  await requireAdmin();
+  const {data,error}=await db.from("sponsorships").select("*").order("created_at",{ascending:false});
+  if(error)throw error;
+  document.getElementById("loginCard").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+  document.getElementById("totalSponsors").textContent=data.length;
+  document.getElementById("totalAmount").textContent=rupiah(data.filter(r=>normalizedPaymentStatus(r.payment_status)==="paid").reduce((sum,r)=>sum+Number(r.amount||0),0));
+  document.getElementById("pendingCount").textContent=data.filter(r=>normalizedPaymentStatus(r.payment_status)==="pending").length;
+  document.getElementById("paidCount").textContent=data.filter(r=>normalizedPaymentStatus(r.payment_status)==="paid").length;
+  document.getElementById("totalFiles").textContent=data.filter(r=>r.logo_path&&r.proof_path).length;
+  window.adminRows=data;
+  await renderRows();
+ }catch(err){
+  let msg=err?.message||"Tidak dapat memuat database.";
+  if(msg.toLowerCase().includes("failed to fetch"))msg="Gagal terhubung ke Supabase saat memuat data. Periksa koneksi internet, status project Supabase, Project URL, dan kebijakan RLS tabel sponsorships.";
+  status("adminStatus",msg,true);
+ }
+}
+async function signedLink(path){
+ if(!path)return "";
+ const {data,error}=await db.storage.from(BUCKET).createSignedUrl(path,120);
+ if(error)throw error;
+ return data.signedUrl;
+}
+async function changePaymentStatus(id,nextStatus,button){
+ try{
+  const user=await requireAdmin();
+  if(!user)throw new Error("Silakan login kembali.");
+  if(nextStatus==="paid"&&!confirm("Konfirmasi bahwa pembayaran ini benar-benar sudah diterima?"))return;
+  button.disabled=true;button.textContent="Menyimpan...";
+  const {data,error}=await db.from("sponsorships").update({payment_status:nextStatus}).eq("id",id).select("id,payment_status");
+  if(error)throw error;
+  if(!data||data.length===0)throw new Error("Status tidak berubah. Periksa kebijakan UPDATE/RLS pada tabel sponsorships di Supabase.");
+  status("adminStatus","Status pembayaran berhasil diperbarui menjadi "+paymentLabel(nextStatus)+".");
+  await loadAdmin();
+ }catch(err){
+  let msg=err?.message||"Status pembayaran gagal diperbarui.";
+  if(msg.toLowerCase().includes("failed to fetch"))msg="Tidak dapat terhubung ke Supabase saat mengubah status. Periksa koneksi dan kebijakan UPDATE/RLS tabel sponsorships.";
+  status("adminStatus",msg,true);
+ }finally{button.disabled=false;button.textContent="Simpan Status";}
+}
 async function renderRows(){
- const q=(document.getElementById("search").value||"").toLowerCase();const data=(window.adminRows||[]).filter(r=>[r.company,r.contact,r.phone,r.email,r.package_name,r.notes].join(" ").toLowerCase().includes(q));const tbody=document.getElementById("rows");tbody.replaceChildren();
- if(!data.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=11;td.textContent="Belum ada data sponsorship.";tr.appendChild(td);tbody.appendChild(tr);return;}
- for(let i=0;i<data.length;i++){const r=data[i],tr=document.createElement("tr");[i+1,r.company,r.contact,r.phone,r.email||"",r.package_name,rupiah(r.amount)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
-  for(const p of [r.logo_path,r.proof_path]){const td=document.createElement("td");if(p){try{const a=document.createElement("a");a.href=await signedLink(p);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a)}catch(_){td.textContent="Tidak tersedia"}}else td.textContent="-";tr.appendChild(td)}
-  [r.notes||"",new Date(r.created_at).toLocaleString("id-ID")].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});tbody.appendChild(tr);
+ const q=(document.getElementById("search").value||"").toLowerCase();
+ const selectedStatus=document.getElementById("statusFilter").value;
+ const data=(window.adminRows||[]).filter(r=>{
+  const matchesText=[r.company,r.contact,r.phone,r.email,r.package_name,r.notes].join(" ").toLowerCase().includes(q);
+  return matchesText&&(selectedStatus==="all"||normalizedPaymentStatus(r.payment_status)===selectedStatus);
+ });
+ const tbody=document.getElementById("rows");tbody.replaceChildren();
+ if(!data.length){
+  const tr=document.createElement("tr"),td=document.createElement("td");
+  td.colSpan=13;td.textContent="Tidak ada data sponsorship untuk pencarian/status ini.";
+  tr.appendChild(td);tbody.appendChild(tr);return;
+ }
+ for(let i=0;i<data.length;i++){
+  const r=data[i],tr=document.createElement("tr");
+  [i+1,r.company,r.contact,r.phone,r.email||"",r.package_name,rupiah(r.amount)].forEach(v=>{
+   const td=document.createElement("td");td.textContent=v??"";tr.appendChild(td);
+  });
+  const current=normalizedPaymentStatus(r.payment_status);
+  const statusTd=document.createElement("td"),badge=document.createElement("span");
+  badge.className="status-badge badge-"+current;badge.textContent=paymentLabel(current);statusTd.appendChild(badge);tr.appendChild(statusTd);
+  const editTd=document.createElement("td"),select=document.createElement("select");
+  select.className="status-select";select.setAttribute("aria-label","Ubah status pembayaran");
+  [["pending","Pending · Menunggu"],["paid","Paid · Lunas"],["failed","Failed · Gagal"],["expired","Expired · Kedaluwarsa"]].forEach(([v,label])=>{
+   const o=document.createElement("option");o.value=v;o.textContent=label;o.selected=v===current;select.appendChild(o);
+  });
+  const save=document.createElement("button");save.type="button";save.className="btn save-status";save.textContent="Simpan Status";
+  save.addEventListener("click",()=>changePaymentStatus(r.id,select.value,save));
+  editTd.appendChild(select);editTd.appendChild(document.createElement("br"));editTd.appendChild(save);tr.appendChild(editTd);
+  for(const p of [r.logo_path,r.proof_path]){
+   const td=document.createElement("td");
+   if(p){try{const a=document.createElement("a");a.href=await signedLink(p);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a)}
+    catch(_){td.textContent="Tidak tersedia"}}
+   else td.textContent="-";
+   tr.appendChild(td);
+  }
+  [r.notes||"",r.created_at?new Date(r.created_at).toLocaleString("id-ID"):"-"].forEach(v=>{
+   const td=document.createElement("td");td.textContent=v;tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
  }
 }
 document.getElementById("search").addEventListener("input",renderRows);
+document.getElementById("statusFilter").addEventListener("change",renderRows);
 document.getElementById("refreshBtn").addEventListener("click",loadAdmin);
 document.getElementById("logoutBtn").addEventListener("click",async()=>{if(db)await db.auth.signOut();document.getElementById("dashboard").classList.add("hidden");document.getElementById("loginCard").classList.remove("hidden")});
-document.getElementById("csvBtn").addEventListener("click",()=>{const rows=window.adminRows||[];const cols=["created_at","company","contact","phone","email","package_name","amount","notes"];const csv=[cols.join(","),...rows.map(r=>cols.map(k=>'"'+String(r[k]??"").replace(/"/g,'""')+'"').join(","))].join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="database-sponsorship-aresta.csv";a.click();URL.revokeObjectURL(a.href)});
+document.getElementById("csvBtn").addEventListener("click",()=>{const rows=window.adminRows||[];const cols=["created_at","company","contact","phone","email","package_name","amount","payment_status","notes"];const csv=[cols.join(","),...rows.map(r=>cols.map(k=>'"'+String(r[k]??"").replace(/"/g,'""')+'"').join(","))].join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="database-sponsorship-aresta.csv";a.click();URL.revokeObjectURL(a.href)});
 if(isAdminPage&&configured){db.auth.getSession().then(({data})=>{if(data.session)loadAdmin()})}
 </script>
 </body></html>
+
