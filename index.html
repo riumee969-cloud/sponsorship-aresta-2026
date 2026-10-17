@@ -222,23 +222,70 @@ async function requireAdmin(){ready();const {data:{user},error}=await db.auth.ge
 async function loadAdmin(){
  try{await requireAdmin();const {data,error}=await db.from("sponsorships").select("*").order("created_at",{ascending:false});if(error)throw error;
   document.getElementById("loginCard").classList.add("hidden");document.getElementById("dashboard").classList.remove("hidden");
-  document.getElementById("totalSponsors").textContent=data.length;document.getElementById("totalAmount").textContent=rupiah(data.reduce((s,r)=>s+Number(r.amount||0),0));document.getElementById("totalFiles").textContent=data.filter(r=>r.logo_path&&r.proof_path).length;
+  document.getElementById("totalSponsors").textContent=data.length;document.getElementById("totalAmount").textContent=rupiah(data.filter(r=>(r.payment_status||"pending")==="paid").reduce((s,r)=>s+Number(r.amount||0),0));document.getElementById("pendingCount").textContent=data.filter(r=>(r.payment_status||"pending")==="pending").length;document.getElementById("paidCount").textContent=data.filter(r=>r.payment_status==="paid").length;document.getElementById("totalFiles").textContent=data.filter(r=>r.logo_path&&r.proof_path).length;
   window.adminRows=data;renderRows();
  }catch(err){status("adminStatus",err.message||"Tidak dapat memuat database. Pastikan akun ini adalah admin yang diizinkan.",true)}
 }
 async function signedLink(path){if(!path)return "";const {data,error}=await db.storage.from(BUCKET).createSignedUrl(path,120);if(error)throw error;return data.signedUrl;}
+function paymentLabel(value){
+ const labels={pending:"PENDING · Menunggu",paid:"PAID · Lunas",failed:"FAILED · Gagal",expired:"EXPIRED · Kedaluwarsa"};
+ return labels[value]||labels.pending;
+}
+async function savePaymentStatus(id,newStatus,button){
+ try{
+  await requireAdmin();
+  if(newStatus==="paid"&&!confirm("Konfirmasi bahwa pembayaran sponsor ini sudah diterima dan lunas?")){button.disabled=false;button.textContent="Simpan Status";return;}
+  button.disabled=true;button.textContent="Menyimpan...";
+  const {error}=await db.from("sponsorships").update({payment_status:newStatus}).eq("id",id);
+  if(error)throw error;
+  const row=(window.adminRows||[]).find(item=>String(item.id)===String(id));
+  if(row)row.payment_status=newStatus;
+  await loadAdmin();
+  status("adminStatus","Status pembayaran berhasil diperbarui menjadi "+paymentLabel(newStatus)+".");
+ }catch(err){
+  status("adminStatus","Status gagal diperbarui. "+(err.message||"Periksa izin UPDATE/RLS Supabase."),true);
+  button.disabled=false;button.textContent="Simpan Status";
+ }
+}
 async function renderRows(){
- const q=(document.getElementById("search").value||"").toLowerCase();const data=(window.adminRows||[]).filter(r=>[r.company,r.contact,r.phone,r.email,r.package_name,r.notes].join(" ").toLowerCase().includes(q));const tbody=document.getElementById("rows");tbody.replaceChildren();
- if(!data.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=11;td.textContent="Belum ada data sponsorship.";tr.appendChild(td);tbody.appendChild(tr);return;}
- for(let i=0;i<data.length;i++){const r=data[i],tr=document.createElement("tr");[i+1,r.company,r.contact,r.phone,r.email||"",r.package_name,rupiah(r.amount)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
-  for(const p of [r.logo_path,r.proof_path]){const td=document.createElement("td");if(p){try{const a=document.createElement("a");a.href=await signedLink(p);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a)}catch(_){td.textContent="Tidak tersedia"}}else td.textContent="-";tr.appendChild(td)}
-  [r.notes||"",new Date(r.created_at).toLocaleString("id-ID")].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});tbody.appendChild(tr);
+ const q=(document.getElementById("search").value||"").toLowerCase();
+ const selectedStatus=document.getElementById("statusFilter").value;
+ const data=(window.adminRows||[]).filter(r=>{
+  const matchesText=[r.company,r.contact,r.phone,r.email,r.package_name,r.notes].join(" ").toLowerCase().includes(q);
+  const paymentStatus=r.payment_status||"pending";
+  return matchesText&&(selectedStatus==="all"||paymentStatus===selectedStatus);
+ });
+ const tbody=document.getElementById("rows");tbody.replaceChildren();
+ if(!data.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=13;td.textContent="Tidak ada data sponsorship untuk pencarian/status ini.";tr.appendChild(td);tbody.appendChild(tr);return;}
+ for(let i=0;i<data.length;i++){
+  const r=data[i],tr=document.createElement("tr");
+  [i+1,r.company,r.contact,r.phone,r.email||"",r.package_name,rupiah(r.amount)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
+  const currentStatus=r.payment_status||"pending";
+  const badgeCell=document.createElement("td"),badge=document.createElement("span");
+  badge.className="payment-badge payment-"+currentStatus;badge.textContent=paymentLabel(currentStatus);badgeCell.appendChild(badge);tr.appendChild(badgeCell);
+  const controlCell=document.createElement("td"),select=document.createElement("select");
+  select.className="status-control";
+  [["pending","Pending · Menunggu"],["paid","Paid · Lunas"],["failed","Failed · Gagal"],["expired","Expired · Kedaluwarsa"]].forEach(([value,label])=>{const option=document.createElement("option");option.value=value;option.textContent=label;select.appendChild(option)});
+  select.value=currentStatus;
+  const save=document.createElement("button");save.type="button";save.className="btn save-status";save.textContent="Simpan Status";
+  save.addEventListener("click",()=>savePaymentStatus(r.id,select.value,save));
+  controlCell.append(select,document.createElement("br"),save);tr.appendChild(controlCell);
+  for(const path of [r.logo_path,r.proof_path]){
+   const td=document.createElement("td");
+   if(path){try{const a=document.createElement("a");a.href=await signedLink(path);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a)}catch(_){td.textContent="Tidak tersedia"}}
+   else td.textContent="-";
+   tr.appendChild(td);
+  }
+  [r.notes||"",new Date(r.created_at).toLocaleString("id-ID")].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
+  tbody.appendChild(tr);
  }
 }
 document.getElementById("search").addEventListener("input",renderRows);
+document.getElementById("statusFilter").addEventListener("change",renderRows);
 document.getElementById("refreshBtn").addEventListener("click",loadAdmin);
 document.getElementById("logoutBtn").addEventListener("click",async()=>{if(db)await db.auth.signOut();document.getElementById("dashboard").classList.add("hidden");document.getElementById("loginCard").classList.remove("hidden")});
 document.getElementById("csvBtn").addEventListener("click",()=>{const rows=window.adminRows||[];const cols=["created_at","company","contact","phone","email","package_name","amount","notes"];const csv=[cols.join(","),...rows.map(r=>cols.map(k=>'"'+String(r[k]??"").replace(/"/g,'""')+'"').join(","))].join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="database-sponsorship-aresta.csv";a.click();URL.revokeObjectURL(a.href)});
 if(isAdminPage&&configured){db.auth.getSession().then(({data})=>{if(data.session)loadAdmin()})}
 </script>
 </body></html>
+
