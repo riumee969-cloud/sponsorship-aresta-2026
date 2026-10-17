@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sponsorship Aresta</title>
-<link rel="icon" type="image/png" sizes="512x512" href="./favicon%20(1)-aresta.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./favicon-aresta%20(1).png">
 <link rel="apple-touch-icon" href="./favicon-aresta%20(1).png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -34,8 +34,7 @@
    <div class="formsection"><div class="sectionhead"><span class="sectionnum">02</span><div><div class="sectiontitle">Detail Sponsorship</div><div class="sectionnote">Pilih paket dan masukkan nominal dukungan.</div></div></div>
    <label>Paket Sponsorship *</label><select name="package_name" required><option value="">--Pilih paket sponsorship--</option><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Titanium</option><option>Diamond</option><select>
    <label>Nominal Sponsorship (Rp) *</label><input name="amount" required inputmode="numeric" placeholder="Contoh: 1000000"><div class="hint">Masukkan nominal dalam angka, tanpa perlu mengetik “Rp”.</div></div>
-   
-<!-- INFORMASI PEMBAYARAN ARESTA -->
+    <!-- INFORMASI PEMBAYARAN ARESTA -->
 <div class="payment-card">
   <h3>💳 Pembayaran Sponsorship</h3>
   <p>
@@ -153,7 +152,6 @@ function copyAccountNumber() {
     });
 }
 </script>
-
    <div class="formsection"><div class="sectionhead"><span class="sectionnum">03</span><div><div class="sectiontitle">Dokumen Pendukung</div><div class="sectionnote">Unggah logo sponsor dan bukti transfer/dokumentasi.</div></div></div>
    <label>Logo Sponsor / Perusahaan *</label><div class="filebox"><input id="logo" type="file" accept="image/png,image/jpeg,image/webp" required><div class="filehint"><span>▧</span><span><b>Format:</b> JPG, PNG, atau WEBP · <b>Maksimal:</b> 5 MB</span></div></div>
    <label>Bukti Transfer / Dokumentasi *</label><div class="filebox"><input id="proof" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" required><div class="filehint"><span>▧</span><span><b>Format:</b> JPG, PNG, WEBP, atau PDF · <b>Maksimal:</b> 5 MB</span></div></div></div>
@@ -162,7 +160,7 @@ function copyAccountNumber() {
    <div id="formStatus" class="status hidden" role="status" aria-live="polite"></div>
    <div class="actions"><button id="submitBtn" class="btn" type="submit">Kirim Data Sponsorship&nbsp; →</button><button class="btn secondary" type="reset">Bersihkan Formulir</button></div>
   </form>
-  <p class="footnote">Dengan mengirim formulir ini, Anda memastikan informasi yang diberikan sudah benar.<br><strong>ARESTA 2026</strong> · Terima kasih atas dukungan dan kepercayaan Anda.</p>
+  <p class="footnote">Sekretariat : Jl.Irian No.20 Kasomalang Wetan, Kasomalang. No.Tlp. (0260) 481447 SUBANG 41281<br><strong>ARESTA 2026</strong> · Terima kasih atas dukungan dan kepercayaan Anda.</p>
  </div>
 </section>
 <section id="adminPage" class="wrap hidden">
@@ -172,9 +170,9 @@ function copyAccountNumber() {
   <form id="loginForm"><label>Email admin</label><input id="adminEmail" type="email" autocomplete="username" required><label>Password</label><input id="adminPassword" type="password" autocomplete="current-password" required><div id="loginStatus" class="status hidden"></div><div class="actions"><button class="btn" type="submit">Masuk ke Database</button></div></form>
  </div>
  <div id="dashboard" class="hidden">
-  <div class="stats"><div class="stat"><span>Total Sponsor</span><strong id="totalSponsors">0</strong></div><div class="stat"><span>Total Dana Sponsorship</span><strong id="totalAmount">Rp 0</strong></div><div class="stat"><span>Data dengan Dua File</span><strong id="totalFiles">0</strong></div></div>
-  <div class="card"><div class="toolbar"><input id="search" placeholder="Cari sponsor, kontak, paket, atau telepon..."><button id="refreshBtn" class="btn">Muat Ulang</button><button id="csvBtn" class="btn secondary">Ekspor CSV</button><button id="logoutBtn" class="btn danger">Keluar</button></div><div id="adminStatus" class="status hidden"></div>
-  <div class="tablewrap"><table><thead><tr><th>No.</th><th>Nama Sponsor</th><th>Penanggung Jawab</th><th>Telepon</th><th>Email</th><th>Paket</th><th>Nominal</th><th>Logo</th><th>Bukti Transfer</th><th>Catatan</th><th>Tanggal</th></tr></thead><tbody id="rows"></tbody></table></div>
+  <div class="stats"><div class="stat"><span>Total Sponsor</span><strong id="totalSponsors">0</strong></div><div class="stat"><span>Total Pembayaran Lunas</span><strong id="totalAmount">Rp 0</strong></div><div class="stat"><span>Menunggu Pembayaran</span><strong id="pendingCount">0</strong></div><div class="stat"><span>Pembayaran Lunas</span><strong id="paidCount">0</strong></div><div class="stat"><span>Data dengan Dua File</span><strong id="totalFiles">0</strong></div></div>
+  <div class="card"><div class="toolbar"><input id="search" placeholder="Cari sponsor, kontak, paket, atau telepon..."><select id="statusFilter" aria-label="Filter status pembayaran" style="max-width:220px"><option value="all">Semua status pembayaran</option><option value="pending">Pending · Menunggu</option><option value="paid">Paid · Lunas</option><option value="failed">Failed · Gagal</option><option value="expired">Expired · Kedaluwarsa</option></select><button id="refreshBtn" class="btn">Muat Ulang</button><button id="csvBtn" class="btn secondary">Ekspor CSV</button><button id="logoutBtn" class="btn danger">Keluar</button></div><div id="adminStatus" class="status hidden"></div>
+  <div class="tablewrap"><table><thead><tr><th>No.</th><th>Nama Sponsor</th><th>Penanggung Jawab</th><th>Telepon</th><th>Email</th><th>Paket</th><th>Nominal</th><th>Status Pembayaran</th><th>Ubah Status</th><th>Logo</th><th>Bukti Transfer</th><th>Catatan</th><th>Tanggal</th></tr></thead><tbody id="rows"></tbody></table></div>
   <p class="small" style="margin-top:14px">File menggunakan signed URL sementara. Jangan bagikan link file kepada orang lain.</p></div>
  </div>
 </section>
@@ -224,20 +222,66 @@ async function requireAdmin(){ready();const {data:{user},error}=await db.auth.ge
 async function loadAdmin(){
  try{await requireAdmin();const {data,error}=await db.from("sponsorships").select("*").order("created_at",{ascending:false});if(error)throw error;
   document.getElementById("loginCard").classList.add("hidden");document.getElementById("dashboard").classList.remove("hidden");
-  document.getElementById("totalSponsors").textContent=data.length;document.getElementById("totalAmount").textContent=rupiah(data.reduce((s,r)=>s+Number(r.amount||0),0));document.getElementById("totalFiles").textContent=data.filter(r=>r.logo_path&&r.proof_path).length;
+  document.getElementById("totalSponsors").textContent=data.length;document.getElementById("totalAmount").textContent=rupiah(data.filter(r=>(r.payment_status||"pending")==="paid").reduce((s,r)=>s+Number(r.amount||0),0));document.getElementById("pendingCount").textContent=data.filter(r=>(r.payment_status||"pending")==="pending").length;document.getElementById("paidCount").textContent=data.filter(r=>r.payment_status==="paid").length;document.getElementById("totalFiles").textContent=data.filter(r=>r.logo_path&&r.proof_path).length;
   window.adminRows=data;renderRows();
  }catch(err){status("adminStatus",err.message||"Tidak dapat memuat database. Pastikan akun ini adalah admin yang diizinkan.",true)}
 }
 async function signedLink(path){if(!path)return "";const {data,error}=await db.storage.from(BUCKET).createSignedUrl(path,120);if(error)throw error;return data.signedUrl;}
+function paymentLabel(value){
+ const labels={pending:"PENDING · Menunggu",paid:"PAID · Lunas",failed:"FAILED · Gagal",expired:"EXPIRED · Kedaluwarsa"};
+ return labels[value]||labels.pending;
+}
+async function savePaymentStatus(id,newStatus,button){
+ try{
+  await requireAdmin();
+  if(newStatus==="paid"&&!confirm("Konfirmasi bahwa pembayaran sponsor ini sudah diterima dan lunas?")){button.disabled=false;button.textContent="Simpan Status";return;}
+  button.disabled=true;button.textContent="Menyimpan...";
+  const {error}=await db.from("sponsorships").update({payment_status:newStatus}).eq("id",id);
+  if(error)throw error;
+  const row=(window.adminRows||[]).find(item=>String(item.id)===String(id));
+  if(row)row.payment_status=newStatus;
+  await loadAdmin();
+  status("adminStatus","Status pembayaran berhasil diperbarui menjadi "+paymentLabel(newStatus)+".");
+ }catch(err){
+  status("adminStatus","Status gagal diperbarui. "+(err.message||"Periksa izin UPDATE/RLS Supabase."),true);
+  button.disabled=false;button.textContent="Simpan Status";
+ }
+}
 async function renderRows(){
- const q=(document.getElementById("search").value||"").toLowerCase();const data=(window.adminRows||[]).filter(r=>[r.company,r.contact,r.phone,r.email,r.package_name,r.notes].join(" ").toLowerCase().includes(q));const tbody=document.getElementById("rows");tbody.replaceChildren();
- if(!data.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=11;td.textContent="Belum ada data sponsorship.";tr.appendChild(td);tbody.appendChild(tr);return;}
- for(let i=0;i<data.length;i++){const r=data[i],tr=document.createElement("tr");[i+1,r.company,r.contact,r.phone,r.email||"",r.package_name,rupiah(r.amount)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
-  for(const p of [r.logo_path,r.proof_path]){const td=document.createElement("td");if(p){try{const a=document.createElement("a");a.href=await signedLink(p);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a)}catch(_){td.textContent="Tidak tersedia"}}else td.textContent="-";tr.appendChild(td)}
-  [r.notes||"",new Date(r.created_at).toLocaleString("id-ID")].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});tbody.appendChild(tr);
+ const q=(document.getElementById("search").value||"").toLowerCase();
+ const selectedStatus=document.getElementById("statusFilter").value;
+ const data=(window.adminRows||[]).filter(r=>{
+  const matchesText=[r.company,r.contact,r.phone,r.email,r.package_name,r.notes].join(" ").toLowerCase().includes(q);
+  const paymentStatus=r.payment_status||"pending";
+  return matchesText&&(selectedStatus==="all"||paymentStatus===selectedStatus);
+ });
+ const tbody=document.getElementById("rows");tbody.replaceChildren();
+ if(!data.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=13;td.textContent="Tidak ada data sponsorship untuk pencarian/status ini.";tr.appendChild(td);tbody.appendChild(tr);return;}
+ for(let i=0;i<data.length;i++){
+  const r=data[i],tr=document.createElement("tr");
+  [i+1,r.company,r.contact,r.phone,r.email||"",r.package_name,rupiah(r.amount)].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
+  const currentStatus=r.payment_status||"pending";
+  const badgeCell=document.createElement("td"),badge=document.createElement("span");
+  badge.className="payment-badge payment-"+currentStatus;badge.textContent=paymentLabel(currentStatus);badgeCell.appendChild(badge);tr.appendChild(badgeCell);
+  const controlCell=document.createElement("td"),select=document.createElement("select");
+  select.className="status-control";
+  [["pending","Pending · Menunggu"],["paid","Paid · Lunas"],["failed","Failed · Gagal"],["expired","Expired · Kedaluwarsa"]].forEach(([value,label])=>{const option=document.createElement("option");option.value=value;option.textContent=label;select.appendChild(option)});
+  select.value=currentStatus;
+  const save=document.createElement("button");save.type="button";save.className="btn save-status";save.textContent="Simpan Status";
+  save.addEventListener("click",()=>savePaymentStatus(r.id,select.value,save));
+  controlCell.append(select,document.createElement("br"),save);tr.appendChild(controlCell);
+  for(const path of [r.logo_path,r.proof_path]){
+   const td=document.createElement("td");
+   if(path){try{const a=document.createElement("a");a.href=await signedLink(path);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a)}catch(_){td.textContent="Tidak tersedia"}}
+   else td.textContent="-";
+   tr.appendChild(td);
+  }
+  [r.notes||"",new Date(r.created_at).toLocaleString("id-ID")].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
+  tbody.appendChild(tr);
  }
 }
 document.getElementById("search").addEventListener("input",renderRows);
+document.getElementById("statusFilter").addEventListener("change",renderRows);
 document.getElementById("refreshBtn").addEventListener("click",loadAdmin);
 document.getElementById("logoutBtn").addEventListener("click",async()=>{if(db)await db.auth.signOut();document.getElementById("dashboard").classList.add("hidden");document.getElementById("loginCard").classList.remove("hidden")});
 document.getElementById("csvBtn").addEventListener("click",()=>{const rows=window.adminRows||[];const cols=["created_at","company","contact","phone","email","package_name","amount","notes"];const csv=[cols.join(","),...rows.map(r=>cols.map(k=>'"'+String(r[k]??"").replace(/"/g,'""')+'"').join(","))].join("\r\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="database-sponsorship-aresta.csv";a.click();URL.revokeObjectURL(a.href)});
