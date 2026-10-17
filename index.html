@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sponsorship Aresta</title>
-<link rel="icon" type="image/png" sizes="512x512" href="./favicon-aresta20%(1).png">
-<link rel="apple-touch-icon" href="./favicon-aresta20%(1).png">
+<link rel="icon" type="image/png" sizes="512x512" href="./favicon-aresta.png">
+<link rel="apple-touch-icon" href="./favicon-aresta.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--navy:#101b31;--navy2:#172844;--gold:#d9a441;--gold2:#f2c66d;--bg:#f4f6fa;--ink:#202b3d;--muted:#6b778c;--line:#dce2eb;--white:#fff;--success:#e7f7ef;--danger:#fff0ef}
@@ -21,7 +21,7 @@
 <section id="publicPage" class="wrap formcard">
  <div class="card">
   <header class="brandbar">
-   <img class="brandlogo" src="./favicon-aresta20%(1).png" alt="Logo Aresta 2026">
+   <img class="brandlogo" src="./favicon-aresta.png" alt="Logo Aresta 2026">
    <div><div class="brandname">Formulir Resmi · Aresta</div><h1 class="brandtitle">Sponsorship Aresta 2026</h1><p class="branddesc">Mari berkolaborasi untuk menghadirkan kegiatan yang berdampak dan berkesan.</p><span class="yearpill">✦ AGENDA KELAS AKHIR 2026</span></div>
   </header>
   <div class="formintro"><div class="introicon">✦</div><div><strong>Formulir Pendataan Sponsor</strong><span>Lengkapi informasi di bawah ini. Kolom bertanda * wajib diisi. Pastikan data dan dokumen yang dikirim sudah benar.</span></div></div>
@@ -32,7 +32,7 @@
    <label>Nomor Telepon / WhatsApp *</label><input name="phone" required maxlength="50" type="tel" autocomplete="tel" placeholder="Contoh: 08xxxxxxxxxx">
    <label>Email</label><input name="email" type="email" maxlength="200" autocomplete="email" placeholder="namaperusahaan@gmail.com"></div>
    <div class="formsection"><div class="sectionhead"><span class="sectionnum">02</span><div><div class="sectiontitle">Detail Sponsorship</div><div class="sectionnote">Pilih paket dan masukkan nominal dukungan.</div></div></div>
-   <label>Paket Sponsorship *</label><select name="package_name" required><option value="">--Pilih paket sponsorship--</option><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Titanium</option><option>Diamond</option></select>
+   <label>Paket Sponsorship *</label><select name="package_name" required><option value="">--Pilih paket sponsorship--</option><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Titanium</option><option>Diamond</option><select>
    <label>Nominal Sponsorship (Rp) *</label><input name="amount" required inputmode="numeric" placeholder="Contoh: 1000000"><div class="hint">Masukkan nominal dalam angka, tanpa perlu mengetik “Rp”.</div></div>
    
 <!-- INFORMASI PEMBAYARAN ARESTA -->
@@ -162,11 +162,11 @@ function copyAccountNumber() {
    <div id="formStatus" class="status hidden" role="status" aria-live="polite"></div>
    <div class="actions"><button id="submitBtn" class="btn" type="submit">Kirim Data Sponsorship&nbsp; →</button><button class="btn secondary" type="reset">Bersihkan Formulir</button></div>
   </form>
-  <p class="footnote">Sekretariat : Jl.Irian No.20 Kasomalang Wetan, Kasomalang. No.Tlp. (0260) 481447 SUBANG 41281<br><strong>ARESTA 2026</strong> · Terima kasih atas dukungan dan kepercayaan Anda.</p>
+  <p class="footnote">Dengan mengirim formulir ini, Anda memastikan informasi yang diberikan sudah benar.<br><strong>ARESTA 2026</strong> · Terima kasih atas dukungan dan kepercayaan Anda.</p>
  </div>
 </section>
 <section id="adminPage" class="wrap hidden">
- <header class="hero"><img class="brandlogo" src="./favicon-aresta20%(1).png" alt="Logo Aresta 2026"><div><h1>Database Sponsorship Aresta</h1><p>Panel administrasi · Pengelolaan data sponsor, logo perusahaan, dan bukti transfer.</p></div></header>
+ <header class="hero"><img class="brandlogo" src="./logo-aresta.png" alt="Logo Aresta 2026"><div><h1>Database Sponsorship Aresta</h1><p>Panel administrasi · Pengelolaan data sponsor, logo perusahaan, dan bukti transfer.</p></div></header>
  <div id="loginCard" class="card" style="max-width:430px;margin:28px auto">
   <h2>Login Admin</h2><p>Masuk untuk mengelola data sponsorship. Akses dibatasi untuk akun admin yang terdaftar.</p>
   <form id="loginForm"><label>Email admin</label><input id="adminEmail" type="email" autocomplete="username" required><label>Password</label><input id="adminPassword" type="password" autocomplete="current-password" required><div id="loginStatus" class="status hidden"></div><div class="actions"><button class="btn" type="submit">Masuk ke Database</button></div></form>
@@ -206,27 +206,16 @@ async function uploadFile(file,kind){
 }
 document.getElementById("sponsorForm").addEventListener("submit",async e=>{
  e.preventDefault();const btn=document.getElementById("submitBtn");btn.disabled=true;btn.textContent="Mengirim...";
- let tahap="menghubungkan ke Supabase";
  try{
   ready();const f=e.currentTarget;const amount=Number(String(f.amount.value).replace(/[^\d]/g,""));
   if(!Number.isSafeInteger(amount)||amount<1)throw new Error("Nominal sponsorship harus berupa angka lebih dari nol.");
-  tahap="mengunggah logo sponsor";
   const logoPath=await uploadFile(document.getElementById("logo").files[0],"logo");
-  tahap="mengunggah bukti transfer";
   const proofPath=await uploadFile(document.getElementById("proof").files[0],"proof");
-  tahap="menyimpan data ke database";
   const {error}=await db.from("sponsorships").insert([{company:f.company.value.trim(),contact:f.contact.value.trim(),phone:f.phone.value.trim(),email:f.email.value.trim()||null,package_name:f.package_name.value,amount,logo_path:logoPath,proof_path:proofPath,notes:f.notes.value.trim()||null}]);
   if(error)throw error;
   status("formStatus","Data sponsorship berhasil dikirim. Terima kasih!");f.reset();
- }catch(err){
-  let pesan=err?.message||"Pengiriman gagal. Silakan coba lagi.";
-  if(pesan.toLowerCase().includes("failed to fetch")||err instanceof TypeError){
-   pesan="Tidak dapat terhubung ke Supabase saat "+tahap+". Periksa koneksi internet dan pastikan URL Supabase benar. Jika terjadi saat mengunggah file, periksa bucket 'sponsorship-files' dan kebijakan Storage (RLS). Jika saat menyimpan data, periksa kebijakan INSERT tabel 'sponsorships'. Detail browser: "+pesan;
-  }else if(pesan.toLowerCase().includes("row-level security")||pesan.toLowerCase().includes("permission denied")){
-   pesan="Izin Supabase ditolak saat "+tahap+". Periksa kebijakan RLS/Storage untuk operasi ini. Detail: "+pesan;
-  }
-  status("formStatus",pesan,true);
- }finally{btn.disabled=false;btn.textContent="Simpan Data Sponsorship"}
+ }catch(err){status("formStatus",err.message||"Pengiriman gagal. Silakan coba lagi.",true)}
+ finally{btn.disabled=false;btn.textContent="Simpan Data Sponsorship"}
 });
 document.getElementById("loginForm").addEventListener("submit",async e=>{
  e.preventDefault();try{ready();const {error}=await db.auth.signInWithPassword({email:document.getElementById("adminEmail").value.trim(),password:document.getElementById("adminPassword").value});if(error)throw error;await loadAdmin();}catch(err){status("loginStatus",err.message||"Login gagal.",true)}
