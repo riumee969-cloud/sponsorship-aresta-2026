@@ -34,6 +34,124 @@
    <div class="formsection"><div class="sectionhead"><span class="sectionnum">02</span><div><div class="sectiontitle">Detail Sponsorship</div><div class="sectionnote">Pilih paket dan masukkan nominal dukungan.</div></div></div>
    <label>Paket Sponsorship *</label><select name="package_name" required><option value="">--Pilih paket sponsorship--</option><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option><option>Titanium</option><option>Diamond</option><select>
    <label>Nominal Sponsorship (Rp) *</label><input name="amount" required inputmode="numeric" placeholder="Contoh: 1000000"><div class="hint">Masukkan nominal dalam angka, tanpa perlu mengetik “Rp”.</div></div>
+    <!-- INFORMASI PEMBAYARAN ARESTA -->
+<div class="payment-card">
+  <h3>💳 Pembayaran Sponsorship</h3>
+  <p>
+    Silakan transfer sesuai nominal sponsorship yang
+    telah diisi, kemudian unggah bukti pembayaran.
+  </p>
+
+  <div class="payment-method">
+    <h4>🏦 Transfer Bank</h4>
+
+    <p>Bank: <strong id="bankName">Bank BCA</strong></p>
+
+    <p>
+      Nomor rekening:
+      <strong id="accountNumber">2313035701</strong>
+    </p>
+
+    <p>
+      Atas nama:
+      <strong id="accountOwner">Reifan Fadhillah Koswara</strong>
+    </p>
+
+    <button type="button" class="btn"
+      onclick="copyAccountNumber()">
+      Salin Nomor Rekening
+    </button>
+  </div>
+
+  <div class="payment-method">
+    <h4>📱 Pembayaran Langsung</h4>
+
+    <p>
+      Langsung Prima Alamat Pondok Pesantren Darussalam Kasomalang Subang Kec. 
+  Kasomalang Wetan Kab. Subang Prov. Jawa Barat
+    </p>
+
+    <img
+      src="./qris-aresta.png"
+      alt="QRIS Pembayaran Sponsorship ARESTA"
+      class="qris-image"
+      onerror="this.style.display='none'"
+    />
+
+    <p class="hint">
+      Pastikan nama merchant dan nominal pembayaran
+      sudah benar sebelum membayar.
+    </p>
+  </div>
+
+  <div id="copyMessage" class="hint"></div>
+</div>
+
+<style>
+.payment-card {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid #d7dee7;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.payment-card h3 {
+  margin-top: 0;
+  color: #11796f;
+}
+
+.payment-method {
+  margin-top: 16px;
+  padding: 15px;
+  border-radius: 9px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  overflow-wrap: anywhere;
+}
+
+.payment-method h4 {
+  margin: 0 0 12px;
+}
+
+.qris-image {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  margin: 12px auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+#copyMessage {
+  margin-top: 10px;
+}
+</style>
+
+<script>
+function copyAccountNumber() {
+  const number = document
+    .getElementById("accountNumber")
+    .textContent.trim();
+
+  if (!/^\d+$/.test(number)) {
+    document.getElementById("copyMessage").textContent =
+      "Silakan isi nomor rekening yang benar terlebih dahulu.";
+    return;
+  }
+
+  navigator.clipboard.writeText(number)
+    .then(() => {
+      document.getElementById("copyMessage").textContent =
+        "Nomor rekening berhasil disalin.";
+    })
+    .catch(() => {
+      document.getElementById("copyMessage").textContent =
+        "Gagal menyalin. Silakan salin nomor rekening secara manual.";
+    });
+}
+</script>
    <div class="formsection"><div class="sectionhead"><span class="sectionnum">03</span><div><div class="sectiontitle">Dokumen Pendukung</div><div class="sectionnote">Unggah logo sponsor dan bukti transfer/dokumentasi.</div></div></div>
    <label>Logo Sponsor / Perusahaan *</label><div class="filebox"><input id="logo" type="file" accept="image/png,image/jpeg,image/webp" required><div class="filehint"><span>▧</span><span><b>Format:</b> JPG, PNG, atau WEBP · <b>Maksimal:</b> 5 MB</span></div></div>
    <label>Bukti Transfer / Dokumentasi *</label><div class="filebox"><input id="proof" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" required><div class="filehint"><span>▧</span><span><b>Format:</b> JPG, PNG, WEBP, atau PDF · <b>Maksimal:</b> 5 MB</span></div></div></div>
