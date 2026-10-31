@@ -150,7 +150,21 @@ async function loadAdmin(){
   window.adminRows=data;await renderRows();
  }catch(err){document.getElementById("dashboard").classList.add("hidden");document.getElementById("loginCard").classList.remove("hidden");showStatus("adminStatus",err.message||"Tidak dapat memuat database.",true);if(!document.getElementById("loginStatus").classList.contains("hidden"))return;showStatus("loginStatus",err.message||"Login atau pemeriksaan admin gagal.",true);}
 }
-async function signedLink(path){if(!path)return "";const {data,error}=await db.storage.from(BUCKET).createSignedUrl(path,120);if(error)throw error;return data.signedUrl;}
+
+async function signedLink(path) {
+  if (!path) return "";
+
+  await requireAdmin();
+
+  const { data, error } = await db.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 3600);
+
+  if (error) throw error;
+
+  return data.signedUrl;
+}
+
 async function changePaymentStatus(id,nextStatus,button){
  try{
   await requireAdmin();if(nextStatus==="paid"&&!confirm("Konfirmasi bahwa pembayaran ini benar-benar sudah diterima?"))return;
@@ -173,7 +187,52 @@ async function renderRows(){
   const editTd=document.createElement("td"),select=document.createElement("select");select.className="status-select";select.setAttribute("aria-label","Ubah status pembayaran");
   [["pending","Pending · Menunggu"],["paid","Paid · Lunas"],["failed","Failed · Gagal"],["expired","Expired · Kedaluwarsa"]].forEach(([v,label])=>{const o=document.createElement("option");o.value=v;o.textContent=label;o.selected=v===current;select.appendChild(o);});
   const save=document.createElement("button");save.type="button";save.className="btn save-status";save.textContent="Simpan Status";save.addEventListener("click",()=>changePaymentStatus(r.id,select.value,save));editTd.append(select,document.createElement("br"),save);tr.appendChild(editTd);
-  for(const p of [r.logo_path,r.proof_path]){const td=document.createElement("td");if(p){try{const a=document.createElement("a");a.href=await signedLink(p);a.target="_blank";a.rel="noopener";a.textContent="Buka file";td.appendChild(a);}catch{td.textContent="Tidak tersedia";}}else td.textContent="-";tr.appendChild(td);}
+ 
+for (const p of [r.logo_path, r.proof_path]) {
+  const td = document.createElement("td");
+
+  if (p) {
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = "Buka file";
+
+    a.addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      a.textContent = "Memuat...";
+      a.style.pointerEvents = "none";
+
+      try {
+        const freshUrl = await signedLink(p);
+        const opened = window.open(
+          freshUrl,
+          "_blank",
+          "noopener,noreferrer"
+        );
+
+        if (!opened) {
+          throw new Error("Popup diblokir browser. Izinkan popup untuk situs ini.");
+        }
+      } catch (err) {
+        showStatus(
+          "adminStatus",
+          "Gagal membuka bukti transfer: " + err.message,
+          true
+        );
+      } finally {
+        a.textContent = "Buka file";
+        a.style.pointerEvents = "";
+      }
+    });
+
+    td.appendChild(a);
+  } else {
+    td.textContent = "-";
+  }
+
+  tr.appendChild(td);
+}
+
   [r.notes||"",r.created_at?new Date(r.created_at).toLocaleString("id-ID"):"-"].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});tbody.appendChild(tr);
  }
 }
