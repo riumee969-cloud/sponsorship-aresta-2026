@@ -200,26 +200,21 @@ for (const p of [r.logo_path, r.proof_path]) {
     a.addEventListener("click", async (e) => {
       e.preventDefault();
 
-      // Buka tab secara langsung dari klik pengguna
-      const newTab = window.open("about:blank", "_blank");
-
-      if (!newTab) {
-        showStatus(
-          "adminStatus",
-          "Popup diblokir browser. Izinkan popup untuk situs ini.",
-          true
-        );
-        return;
-      }
-
       a.textContent = "Memuat...";
+      a.style.pointerEvents = "none";
 
       try {
         const freshUrl = await signedLink(p);
-        newTab.location.replace(freshUrl);
-      } catch (err) {
-        newTab.close();
+        const opened = window.open(
+          freshUrl,
+          "_blank",
+          "noopener,noreferrer"
+        );
 
+        if (!opened) {
+          throw new Error("Popup diblokir browser. Izinkan popup untuk situs ini.");
+        }
+      } catch (err) {
         showStatus(
           "adminStatus",
           "Gagal membuka bukti transfer: " + err.message,
@@ -227,6 +222,7 @@ for (const p of [r.logo_path, r.proof_path]) {
         );
       } finally {
         a.textContent = "Buka file";
+        a.style.pointerEvents = "";
       }
     });
 
@@ -236,6 +232,10 @@ for (const p of [r.logo_path, r.proof_path]) {
   }
 
   tr.appendChild(td);
+}
+
+  [r.notes||"",r.created_at?new Date(r.created_at).toLocaleString("id-ID"):"-"].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});tbody.appendChild(tr);
+ }
 }
 
 document.getElementById("search").addEventListener("input",renderRows);
